@@ -1,2 +1,2 @@
 # atari-sound-forger
-a fun tool for setting up atari music
+a fun web-based tool for setting up atari 2600 music
