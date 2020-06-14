@@ -3,7 +3,7 @@ var defaultMaps = [
         desc: 'simple AUDC 1 - buzzy',
         keyboard: 'us',
         key2tfm: {
-            q: { t: 1, f: 31 },
+            1: { t: 1, f: 31 },
             w: { t: 1, f: 30 },
             e: { t: 1, f: 29 },
             r: { t: 1, f: 28 },

@@ -1,5 +1,19 @@
 /*
 
+    TODO:
+        -keyboard
+        -COLOR KEYS wrt AUDC used... may need to not allow punctuation ? 
+        -piano keybord
+        -record
+        -clicktrack
+        -convert to bB  
+
+    MAYBE:
+        - upper case keys as option?
+
+
+
+
     keyMap maps a keboard key to 
         (t)one - voice/channel
         (f)req - frquency
@@ -27,9 +41,10 @@ ASF.log = (msg) => {
     window.log.innerHTML += msg + '\n';
 };
 
-ASF.maps = defaultMaps;
+ASF.maps = defaultMaps; // maps describe how the keyboard maps to various atari sounds
 
-ASF.clipCache = {};
+ASF.clipCache = {}; // map of toneFreqInt2Key to a playable sound file
+ASF.key2kbdDomId = {}; //key code to id of typewriter keyboard key, to light up
 
 function loadStuff() {
     document.addEventListener('keydown', go);
@@ -37,7 +52,7 @@ function loadStuff() {
 
     ASF.currentMapIndex = 4;
     populateDropdownFromAvailableMaps(ASF.currentMapIndex);
-    mapSelected();
+    setupSelectedMap();
 }
 
 function toneFreqInt2Key(t, f) {
@@ -45,9 +60,8 @@ function toneFreqInt2Key(t, f) {
 }
 
 function loadAllFilesForMap(map) {
-    ASF.log(JSON.stringify(map.key2tfm));
+    //ASF.log(JSON.stringify(map.key2tfm));
     Object.keys(map.key2tfm).map((key) => {
-        console.log(`LOADING key is ${key}`);
         const t_f = map.key2tfm[key];
 
         getFileForTF(t_f.t, t_f.f);
@@ -56,7 +70,6 @@ function loadAllFilesForMap(map) {
 
 // put a Pizzicato sound clip in the cache if not there already
 function getFileForTF(tone, freq) {
-    console.log('loading', { tone, freq });
     const key = toneFreqInt2Key(tone, freq);
     if (ASF.clipCache[key]) return ASF.clipCache[key];
 
@@ -79,13 +92,24 @@ function keyToClipInCurrentMap(key) {
 
 function go(e) {
     const clip = keyToClipInCurrentMap(e.key);
-    if (clip) clip.play();
-    else console.log(`no play for ${e.key}`);
+    if (clip) {
+        clip.play();
+        const kbdDom = document.getElementById(ASF.key2kbdDomId[e.key]);
+
+        if (kbdDom) {
+            kbdDom.classList.add('keydown');
+        }
+    } else console.log(`no play for ${e.key}`);
 }
 function stop(e) {
     const clip = keyToClipInCurrentMap(e.key);
-    if (clip) clip.stop();
-    else console.log(`no stop for ${e.key}`);
+    if (clip) {
+        clip.stop();
+        const kbdDom = document.getElementById(ASF.key2kbdDomId[e.key]);
+        if (kbdDom) {
+            kbdDom.classList.remove('keydown');
+        }
+    } else console.log(`no stop for ${e.key}`);
 }
 
 function ready(fn) {
@@ -96,11 +120,14 @@ function ready(fn) {
     }
 }
 
-function mapSelected() {
+function setupSelectedMap() {
     const selectElem = window.mapSelect;
     ASF.currentMap = ASF.maps[selectElem.options[selectElem.selectedIndex].value];
-    ASF.log(`selected tone ${JSON.stringify(ASF.currentMap)}`);
+    //ASF.log(`selected tone ${JSON.stringify(ASF.currentMap)}`);
     loadAllFilesForMap(ASF.currentMap);
+
+    window.keyboardWrapper.innerHTML = renderUSTypingKeyboard(ASF.currentMap);
+    //  window.pianoWrapper.innerHTML = renderPiano(ASF.currentMap);
 }
 
 function populateDropdownFromAvailableMaps(select) {
@@ -113,4 +140,48 @@ function populateDropdownFromAvailableMaps(select) {
     });
     elem.innerHTML = buf;
 }
+
+function renderPiano(currentMap) {
+    const notes = ['c', 'c#', 'd', 'd#', 'e', 'f', 'f#', 'g', 'g#', 'a', 'a#', 'b'];
+    return notes.map((note) => `<div>${note}</div>`).join('');
+}
+
+function renderUSTypingKeyboard(currentMap) {
+    const keys = `\`1234567890-=
+~~~qwertyuiop[]\\
+~~~~asdfghjkl;'
+~~~~~zxcvbnm,./
+~~~~~~~~ `;
+
+    let keyCounter = 0;
+
+    function makeRow(cs) {
+        return cs.split('').map(makeKey).join('');
+    }
+    function makeKey(c) {
+        const t_f_for_c = currentMap.key2tfm[c];
+
+        const soundDisplay = t_f_for_c ? `<div>${t_f_for_c.t}:${t_f_for_c.f}</div>` : '';
+
+        const kbdDomId = `kbd_${keyCounter}`;
+        keyCounter++;
+
+        if (c === '~') {
+            return `<div class='spacer' id='${kbdDomId}'> </div>`;
+        }
+        if (c === ' ') {
+            return `<div class='space' id='${kbdDomId}'>${c}${soundDisplay}</div>`;
+        }
+
+        ASF.key2kbdDomId[c] = kbdDomId;
+
+        return `<div  id='${kbdDomId}'>${c}${soundDisplay}</div>`;
+    }
+
+    const rowsOfKeys = keys.split('\n');
+    const rows = rowsOfKeys.map(makeRow);
+
+    return rows.map((rowcontent) => `<div class='typewriter-row'>${rowcontent}</div>`).join('');
+}
+
 ready(loadStuff);

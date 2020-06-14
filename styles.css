@@ -7,6 +7,41 @@ a {
     color: black;
 }
 .content {
-    width: 800px;
-    margin: auto;
+    margin-left: 20px;
+}
+
+.typewriter-row {
+    display: flex;
+}
+.typewriter-row > div {
+    border: 1px solid black;
+    width: 2em;
+    height: 2.5em;
+    text-align: center;
+    margin: 2px;
+    border-radius: 4px;
+}
+.typewriter-row > div.keydown {
+    background-color: #ccc;
+}
+
+.typewriter-row > div.spacer {
+    border: none;
+    width: 1em;
+}
+.typewriter-row > div.space {
+    width: 12em;
+}
+.piano > div {
+    display: inline-block;
+    height: 8em;
+    width: 2em;
+    border: 1px solid black;
+}
+.piano > div.sharp {
+    display: inline-block;
+    height: 4em;
+    width: 2em;
+    border: 1px solid black;
+    background: black;
 }
