@@ -15,33 +15,65 @@ a {
 }
 .typewriter-row > div {
     border: 1px solid black;
-    width: 2em;
+    width: 3em;
     height: 2.5em;
     text-align: center;
     margin: 2px;
     border-radius: 4px;
 }
 .typewriter-row > div.keydown {
-    background-color: #ccc;
+    background-color: #fcc;
 }
 
 .typewriter-row > div.spacer {
     border: none;
-    width: 1em;
+    width: 1.5em;
 }
 .typewriter-row > div.space {
-    width: 12em;
+    width: 18em;
 }
-.piano > div {
-    display: inline-block;
+.piano {
+    overflow: auto;
+    margin: 10px;
+}
+.piano .wrapper {
+    float: left;
+    position: relative;
+}
+.piano .key {
+    text-align: center;
+
     height: 8em;
-    width: 2em;
+    width: 3em;
     border: 1px solid black;
+    color: #888;
+
+    display: flex;
+    justify-content: flex-end;
+    flex-direction: column;
 }
-.piano > div.sharp {
-    display: inline-block;
+.piano .key.sharp {
     height: 4em;
     width: 2em;
     border: 1px solid black;
     background: black;
+    position: absolute;
+    top: 0;
+    left: -1em;
+    z-index: 10;
+}
+.piano .key.disabled {
+    background-color: #ddd;
+    border: 1px solid #ddd;
+}
+.piano .key.sharp.disabled {
+    background-color: #999;
+    background-color: #999;
+}
+
+.piano .key.keydown {
+    background-color: #fcc;
+}
+.piano .key.sharp.keydown {
+    background-color: #fcc;
 }

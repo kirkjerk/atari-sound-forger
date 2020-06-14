@@ -12,10 +12,15 @@
 
         <div class="content">
             <h1>Atari Sound Forger</h1>
-            <select id="mapSelect" onchange="setupSelectedMap()"></select>
+            <label
+                >Current Mapping Set:
+                <select id="mapSelect" onchange="setupSelectedMap()"></select
+            ></label>
 
             <div class="piano" id="pianoWrapper"></div>
             <div id="keyboardWrapper"></div>
+
+            <button onclick="stopAllSounds()">stop all sounds</button>
 
             <pre id="log"></pre>
 
