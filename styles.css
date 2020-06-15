@@ -46,7 +46,7 @@ a {
     height: 8em;
     width: 3em;
     border: 1px solid black;
-    color: #888;
+    color: black;
 
     display: flex;
     justify-content: flex-end;
@@ -56,6 +56,7 @@ a {
     height: 4em;
     width: 2em;
     border: 1px solid black;
+    color: white;
     background: black;
     position: absolute;
     top: 0;
@@ -64,11 +65,12 @@ a {
 }
 .piano .key.disabled {
     background-color: #ddd;
-    border: 1px solid #ddd;
+    border: 1px solid #bbb;
 }
 .piano .key.sharp.disabled {
     background-color: #999;
     background-color: #999;
+    border: 1px solid #999;
 }
 
 .piano .key.keydown {

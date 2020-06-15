@@ -1,9 +1,9 @@
 /*
 
     TODO:
-        -need a stop all sounds button!
-        -COLOR KEYS wrt AUDC used... 
-        -piano keybord
+        
+        -test in firefox remove slash from mapping!!
+        
         -record
         -clicktrack
         -convert to bB  
@@ -58,7 +58,9 @@ function loadStuff() {
         window.mappingsets.value = loadedMaps;
         ASF.maps = defaultMaps;
     }
-    ASF.currentMapIndex = 0;
+
+    const previousMapIndex = localStorage.getItem('atari-sound-forger-map-index');
+    ASF.currentMapIndex = previousMapIndex === undefined ? 0 : previousMapIndex;
     populateDropdownFromAvailableMaps(ASF.currentMapIndex);
     setupSelectedMap();
 }
@@ -178,6 +180,8 @@ function setupSelectedMap() {
     window.pianoWrapper.innerHTML = renderPiano(ASF.currentMap);
 
     selectElem.blur();
+
+    localStorage.setItem('atari-sound-forger-map-index', selectElem.selectedIndex);
 }
 
 function populateDropdownFromAvailableMaps(select) {
@@ -254,7 +258,7 @@ function renderUSTypingKeyboard(currentMap) {
     const keys = `\`1234567890-=
 ~~~qwertyuiop[]\\
 ~~~~asdfghjkl;'
-~~~~~zxcvbnm,./
+~~~~~zxcvbnm,.
 ~~~~~~~~ `;
 
     let keyCounter = 0;
