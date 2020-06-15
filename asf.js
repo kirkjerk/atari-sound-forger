@@ -41,8 +41,6 @@ ASF.log = (msg) => {
     window.log.innerHTML += msg + '\n';
 };
 
-ASF.maps = defaultMaps; // maps describe how the keyboard maps to various atari sounds
-
 ASF.clipCache = {}; // map of toneFreqInt2Key to a playable sound file
 ASF.key2kbdDomId = {}; //key code to id of typewriter keyboard key, to light up
 ASF.key2pianoDomId = {}; //key code to id of typewriter keyboard key, to light up
@@ -51,9 +49,33 @@ function loadStuff() {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
 
+    const loadedMaps = localStorage.getItem('atari-sound-forger-maps');
+    try {
+        ASF.maps = loadedMaps ? JSON.parse(loadedMaps) : defaultMaps;
+        window.mappingsets.value = JSON.stringify(ASF.maps, null, ' ');
+    } catch (e) {
+        alert(`error loading mapping set json, using defaults, edit below\n ${e}`);
+        window.mappingsets.value = loadedMaps;
+        ASF.maps = defaultMaps;
+    }
     ASF.currentMapIndex = 0;
     populateDropdownFromAvailableMaps(ASF.currentMapIndex);
     setupSelectedMap();
+}
+
+function storeMappingSetsAndReload() {
+    const raw = window.mappingsets.value;
+    if (raw === '') {
+        localStorage.removeItem('atari-sound-forger-maps');
+        return;
+    }
+    try {
+        const parsed = JSON.parse(raw);
+        localStorage.setItem('atari-sound-forger-maps', raw);
+        location.reload();
+    } catch (e) {
+        alert(`error parsing json\n ${e}`);
+    }
 }
 
 function toneFreqInt2Key(t, f) {
@@ -211,10 +233,10 @@ function renderPianoKey(note, octave, note2type, note2hunk) {
     const sharp = note.length === 2;
     const notename = note.length === 1 ? `${note}${octave}` : `${note.charAt(0)}${octave}#`;
 
-    const typeKey = note2type[notename] ? `<div>${note2type[notename]}</div>` : '';
+    const typeKey = note2type[notename] ? `<div><b>${note2type[notename]}</b></div>` : '';
     const disabled = note2type[notename] ? '' : 'disabled';
 
-    const caption = note2type[notename] ? `${notename}${typeKey}` : '';
+    const caption = note2type[notename] ? `${typeKey}${notename}` : '';
 
     const kbdDomId = `piano_${pianoKeyCounter}`;
     pianoKeyCounter++;

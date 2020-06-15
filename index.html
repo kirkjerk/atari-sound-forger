@@ -11,7 +11,7 @@
         <script src="asf.js"></script>
 
         <div class="content">
-            <h1>Atari Sound Forger</h1>
+            <h1>Atari Sound Forger (v0.2 alpha)</h1>
             <label
                 >Current Mapping Set:
                 <select id="mapSelect" onchange="setupSelectedMap()"></select
@@ -22,12 +22,78 @@
 
             <button onclick="stopAllSounds()">stop all sounds</button>
 
+
+
             <pre id="log"></pre>
 
-            <!-- <details>
-                <summary>An Example</summary>
-                Now that's what I'm talking about
-            </details>-->
+                    <p>
+                        This is meant as a fun real-time tool for exploring Atari 2600 Sounds.
+                    </p>
+                    <p>
+                        Using "mapping sets", standard atari voices are mapped to the laptop keyboard, 
+                        allowing quick play as with a regular synth keyboard.
+                    </p>
+                    <p>
+                        Some mapping sets draw from different Atari voices, and some will display a mapping 
+                        to the a "regular" piano keyboard when available. (Tuning the Atari is a tricky thing :-) )
+                    </p>
+                    <p>
+                        You can create your own mapping sets as well.
+                    </p>
+                    <p>
+                        Future plans include recording timing information and generating batari Basic samples.
+
+            <details>
+                <summary>Advanced Tools</summary>
+                <h3>Mapping Sets</h2>
+                <p>
+                    Mapping Sets are arrays of JSON
+                    
+
+
+                    and pretty straightforward:
+                    <pre>
+                        desc - description
+                        keyboard - currently ignored, set to 'us' for now
+                        key2tfm - an map of keyboard keys to Atari tone, frequency, and piano note
+                                  (note, octave, then maybe sharp, i.e. e2 or f3# )
+                                  (piano note for display purposes only...)
+
+                    </pre>
+                </p>
+                    If you edit here and hit "Store and Use Mapping Sets", it is saved to Local Storage,
+                    so if you make something cool you may want to copy and paste it to someplace safe.
+                </p>
+                <h4>Current Mappings</h4>
+                <textarea id="mappingsets" style="width:40em;height:10em"></textarea>
+            </br>
+                <button onclick="storeMappingSetsAndReload()">Store and Use Mapping Sets</button> (leave textarea blank to restore defaults)
+            </details>
+
+            <details>
+                <summary>Acknowledgements</summary>
+                <p>
+                    Admittedly I think these are all using NTSC values.
+                </p>
+                <p>
+                    This work relies heavily on other people in the Atari dev community, especially
+                    <a href="https://www.randomterrain.com/">Random Terrain</a>
+                    who allowed me to use the Atari 2600 sound clips he painstakingly recorded.
+                </p>
+                <p>
+                    Many of the ideas here were first shown in Visual batari Basic and rely on
+                    <a href="https://www.randomterrain.com/atari-2600-memories-music-and-sound.html#freq_wav_guide"
+                        >Eckhard Stolberg's work</a
+                    >.
+                </p>
+                <p>
+                    Using <a href="https://alemangui.github.io/pizzicato/">Pizzicato.js</a> as the webkit sound library.
+                </p>
+                <p>
+                    Source code open for pull requests at
+                    <a href="https://github.com/kirkjerk/atari-sound-forger">github.com/kirkjerk/atari-sound-forger</a>
+                </p>
+            </details>
         </div>
     </body>
 </html>
