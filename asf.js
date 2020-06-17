@@ -69,7 +69,9 @@ function loadStuff() {
         options: { path: 'fx/ds_cross_stick_rim.wav' },
     });
 
+    ASF.bpm = 120;
     ASF.oneframeInMillis = 1000 / 60;
+    ASF.millisPerTap = 60000 / ASF.bpm; // matches 120 bpm
 
     populateDropdownFromAvailableMaps(ASF.currentMapIndex);
     setupSelectedMap();
@@ -133,12 +135,16 @@ function stopAllSounds() {
 
 function handleKeyDown(e) {
     startSound(e.key);
-    ASF.recording.push({ event: 'down', key: e.key, time: Date.now() });
 }
 function startSound(keypressed) {
     const clip = keyToClipInCurrentMap(keypressed);
     if (clip) {
         clip.play();
+
+        const t_f = ASF.currentMap.key2tfm[keypressed];
+
+        ASF.recording.push({ event: 'down', t_f, time: Date.now() });
+
         const kbdDom = document.getElementById(ASF.key2kbdDomId[keypressed]);
 
         if (kbdDom) {
@@ -155,12 +161,13 @@ function startSound(keypressed) {
 
 function handleKeyUp(e) {
     stopSound(e.key);
-    ASF.recording.push({ event: 'up', key: e.key, time: Date.now() });
 }
 function stopSound(keypressed) {
     const clip = keyToClipInCurrentMap(keypressed);
     if (clip) {
         clip.stop();
+        const t_f = ASF.currentMap.key2tfm[keypressed];
+        ASF.recording.push({ event: 'up', t_f, time: Date.now() });
         const kbdDom = document.getElementById(ASF.key2kbdDomId[keypressed]);
         if (kbdDom) {
             kbdDom.classList.remove('keydown');
@@ -306,7 +313,11 @@ function renderUSTypingKeyboard(currentMap) {
 
 function startBeat() {
     if (ASF.tapTimer) clearInterval(ASF.tapTimer);
-    ASF.tapTimer = setInterval(() => ASF.tap.play(), ASF.oneframeInMillis * 8);
+    console.log(ASF.millisPerTap);
+    ASF.tapTimer = setInterval(() => {
+        ASF.tap.stop();
+        ASF.tap.play();
+    }, ASF.millisPerTap);
 }
 function stopBeat() {
     clearInterval(ASF.tapTimer);
@@ -320,18 +331,32 @@ function playBack() {
     for (let i = 0; i < ASF.recording.length; i++) {
         const e = ASF.recording[i];
         const delay = e.time - startTime;
+        const t_f = e.t_f;
+        const clip = getFileForTF(t_f.t, t_f.f);
+
         console.log(delay);
         if (e.event === 'down') {
             setTimeout(() => {
-                startSound(e.key);
+                clip.play();
             }, delay);
         }
         if (e.event === 'up') {
             setTimeout(() => {
-                stopSound(e.key);
+                clip.stop();
             }, delay);
         }
     }
+}
+
+function promptBPM() {
+    const bpm = prompt('How many BPM?', ASF.bpm);
+    if (bpm) {
+        window.bpm.innerHTML = bpm;
+        window.fpc.innerHTML = 3600 / bpm;
+        ASF.millisPerTap = (60 * 1000) / bpm;
+        ASF.bpm = 120;
+    }
+    if (ASF.tapTimer) startBeat();
 }
 
 ready(loadStuff);
