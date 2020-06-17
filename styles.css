@@ -6,6 +6,11 @@ body {
 a {
     color: black;
 }
+
+details summary {
+    font-size: 1.5em;
+}
+
 .content {
     margin-left: 20px;
 }

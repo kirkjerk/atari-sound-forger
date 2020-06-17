@@ -45,6 +45,8 @@ ASF.clipCache = {}; // map of toneFreqInt2Key to a playable sound file
 ASF.key2kbdDomId = {}; //key code to id of typewriter keyboard key, to light up
 ASF.key2pianoDomId = {}; //key code to id of typewriter keyboard key, to light up
 
+ASF.recording = [];
+
 function loadStuff() {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
@@ -61,6 +63,14 @@ function loadStuff() {
 
     const previousMapIndex = localStorage.getItem('atari-sound-forger-map-index');
     ASF.currentMapIndex = previousMapIndex === undefined ? 0 : previousMapIndex;
+
+    ASF.tap = new Pizzicato.Sound({
+        source: 'file',
+        options: { path: 'fx/ds_cross_stick_rim.wav' },
+    });
+
+    ASF.oneframeInMillis = 1000 / 60;
+
     populateDropdownFromAvailableMaps(ASF.currentMapIndex);
     setupSelectedMap();
 }
@@ -123,6 +133,7 @@ function stopAllSounds() {
 
 function handleKeyDown(e) {
     startSound(e.key);
+    ASF.recording.push({ event: 'down', key: e.key, time: Date.now() });
 }
 function startSound(keypressed) {
     const clip = keyToClipInCurrentMap(keypressed);
@@ -144,6 +155,7 @@ function startSound(keypressed) {
 
 function handleKeyUp(e) {
     stopSound(e.key);
+    ASF.recording.push({ event: 'up', key: e.key, time: Date.now() });
 }
 function stopSound(keypressed) {
     const clip = keyToClipInCurrentMap(keypressed);
@@ -290,6 +302,36 @@ function renderUSTypingKeyboard(currentMap) {
     const rows = rowsOfKeys.map(makeRow);
 
     return rows.map((rowcontent) => `<div class='typewriter-row'>${rowcontent}</div>`).join('');
+}
+
+function startBeat() {
+    if (ASF.tapTimer) clearInterval(ASF.tapTimer);
+    ASF.tapTimer = setInterval(() => ASF.tap.play(), ASF.oneframeInMillis * 8);
+}
+function stopBeat() {
+    clearInterval(ASF.tapTimer);
+    ASF.tapTimer = null;
+}
+function playBack() {
+    console.log(ASF.recording);
+    if (ASF.recording.length <= 0) return;
+    const startTime = ASF.recording[0].time;
+
+    for (let i = 0; i < ASF.recording.length; i++) {
+        const e = ASF.recording[i];
+        const delay = e.time - startTime;
+        console.log(delay);
+        if (e.event === 'down') {
+            setTimeout(() => {
+                startSound(e.key);
+            }, delay);
+        }
+        if (e.event === 'up') {
+            setTimeout(() => {
+                stopSound(e.key);
+            }, delay);
+        }
+    }
 }
 
 ready(loadStuff);

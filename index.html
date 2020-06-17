@@ -11,7 +11,27 @@
         <script src="asf.js"></script>
 
         <div class="content">
-            <h1>Atari Sound Forger (v0.2 alpha)</h1>
+            <h1>Atari Sound Forger (v0.5 alpha)</h1>
+
+            <p>
+                This is meant as a fun real-time tool for exploring Atari 2600 Sounds.
+            </p>
+            <p>
+                Using "mapping sets", standard atari voices are mapped to the laptop keyboard, 
+                allowing quick play as with a regular synth keyboard.
+            </p>
+            <p>
+                Some mapping sets draw from different Atari voices, and some will display a mapping 
+                to the a "regular" piano keyboard when available. (Tuning the Atari is a tricky thing :-) )
+            </p>
+            <p>
+                You can create your own mapping sets as well.
+            </p>
+            <p>
+                Future plans include recording timing information and generating batari Basic samples.
+            </p>
+            <pre id="log"></pre>
+
             <label
                 >Current Mapping Set:
                 <select id="mapSelect" onchange="setupSelectedMap()"></select
@@ -22,26 +42,18 @@
 
             <button onclick="stopAllSounds()">stop all sounds</button>
 
+            <details open>
+                <summary>Recording</summary>
+
+                <button onclick="startBeat()">start beat</button>
+                <button onclick="stopBeat()">stop beat</button>
+                <button onclick="playBack()">playback</button>
+                
+            </details>    
 
 
-            <pre id="log"></pre>
 
-                    <p>
-                        This is meant as a fun real-time tool for exploring Atari 2600 Sounds.
-                    </p>
-                    <p>
-                        Using "mapping sets", standard atari voices are mapped to the laptop keyboard, 
-                        allowing quick play as with a regular synth keyboard.
-                    </p>
-                    <p>
-                        Some mapping sets draw from different Atari voices, and some will display a mapping 
-                        to the a "regular" piano keyboard when available. (Tuning the Atari is a tricky thing :-) )
-                    </p>
-                    <p>
-                        You can create your own mapping sets as well.
-                    </p>
-                    <p>
-                        Future plans include recording timing information and generating batari Basic samples.
+            
 
             <details>
                 <summary>Advanced Tools</summary>
