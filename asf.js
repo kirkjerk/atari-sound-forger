@@ -1,18 +1,12 @@
 /*
 
-    TODO:
-        
-        -test in firefox remove slash from mapping!!
-        
-        -record
-        -clicktrack
-        -convert to bB  
+Stop things for reals w/ loops...
+see about not doing typing thing
 
+    TODO:
     MAYBE:
         - upper case keys as option?
-
-
-
+        -sounds with decay
 
     keyMap maps a keboard key to 
         (t)one - voice/channel
@@ -45,7 +39,9 @@ ASF.clipCache = {}; // map of toneFreqInt2Key to a playable sound file
 ASF.key2kbdDomId = {}; //key code to id of typewriter keyboard key, to light up
 ASF.key2pianoDomId = {}; //key code to id of typewriter keyboard key, to light up
 
-ASF.recording = [];
+ASF.recording = null;
+ASF.recordingKeysNowDown = {};
+ASF.loops = [];
 
 function loadStuff() {
     document.addEventListener('keydown', handleKeyDown);
@@ -68,13 +64,29 @@ function loadStuff() {
         source: 'file',
         options: { path: 'fx/ds_cross_stick_rim.wav' },
     });
+    ASF.counts = [];
+    for (let i = 1; i <= 4; i++) {
+        ASF.counts[`${i}`] = new Pizzicato.Sound({
+            source: 'file',
+            options: { path: `fx/${i}.wav` },
+        });
+    }
 
     ASF.bpm = 120;
+    ASF.fpc = 30;
     ASF.oneframeInMillis = 1000 / 60;
     ASF.millisPerTap = 60000 / ASF.bpm; // matches 120 bpm
+    ASF.beatsPerMeasure = 4;
+    ASF.nowPlaying = false;
 
     populateDropdownFromAvailableMaps(ASF.currentMapIndex);
     setupSelectedMap();
+
+    setPlaybackButtonOn();
+}
+
+function restoreDefaultMappings() {
+    window.mappingsets.value = JSON.stringify(defaultMaps, null, ' ');
 }
 
 function storeMappingSetsAndReload() {
@@ -143,7 +155,7 @@ function startSound(keypressed) {
 
         const t_f = ASF.currentMap.key2tfm[keypressed];
 
-        ASF.recording.push({ event: 'down', t_f, time: Date.now() });
+        ASF.recordingKeysNowDown[keypressed] = { t_f, starttime: Date.now() };
 
         const kbdDom = document.getElementById(ASF.key2kbdDomId[keypressed]);
 
@@ -166,8 +178,14 @@ function stopSound(keypressed) {
     const clip = keyToClipInCurrentMap(keypressed);
     if (clip) {
         clip.stop();
-        const t_f = ASF.currentMap.key2tfm[keypressed];
-        ASF.recording.push({ event: 'up', t_f, time: Date.now() });
+        const recordedKeyDown = ASF.recordingKeysNowDown[keypressed];
+        if (recordedKeyDown) {
+            recordedKeyDown.endtime = Date.now();
+        }
+        if (ASF.recording) {
+            ASF.recording.push(recordedKeyDown);
+        }
+
         const kbdDom = document.getElementById(ASF.key2kbdDomId[keypressed]);
         if (kbdDom) {
             kbdDom.classList.remove('keydown');
@@ -312,51 +330,289 @@ function renderUSTypingKeyboard(currentMap) {
 }
 
 function startBeat() {
+    console.log(ASF.counts);
+
+    const domStatus = document.getElementById('recordingStatus');
     if (ASF.tapTimer) clearInterval(ASF.tapTimer);
-    console.log(ASF.millisPerTap);
     ASF.tapTimer = setInterval(() => {
-        ASF.tap.stop();
-        ASF.tap.play();
+        if (ASF.beatsToGo === 0) {
+            ASF.recordingStartTimeInMills = Date.now(); // - 150;//hack
+            playBack();
+        }
+        if (ASF.beatsToGo >= 1 && ASF.beatsToGo <= 4) {
+            ASF.counts[`${ASF.beatsToGo}`].play();
+        } else {
+            ASF.tap.stop();
+            ASF.tap.play();
+        }
+        domStatus.innerHTML = ASF.beatsToGo <= 0 ? 'RECORDING' : ASF.beatsToGo;
+        ASF.beatsToGo--;
     }, ASF.millisPerTap);
 }
 function stopBeat() {
-    clearInterval(ASF.tapTimer);
+    if (ASF.tapTimer) clearInterval(ASF.tapTimer);
     ASF.tapTimer = null;
 }
-function playBack() {
-    console.log(ASF.recording);
-    if (ASF.recording.length <= 0) return;
-    const startTime = ASF.recording[0].time;
 
-    for (let i = 0; i < ASF.recording.length; i++) {
-        const e = ASF.recording[i];
-        const delay = e.time - startTime;
+function toggleRecording() {
+    const domToggle = document.getElementById('toggleRecording');
+    if (!ASF.recording) {
+        ASF.recording = [];
+        domToggle.innerHTML = '◾ stop recording';
+
+        const useClickTrack = document.getElementById('useClickTrack').checked;
+        if (useClickTrack) {
+            ASF.beatsToGo = 4;
+            startBeat();
+        } else {
+            ASF.beatsToGo = 0;
+        }
+    } else {
+        stopBeat();
+        ASF.nowPlaying = false;
+        document.getElementById('recordingStatus').innerHTML = '';
+
+        const recordingZeroedFromStartTime = ASF.recording.map((x) => {
+            return {
+                starttime: x.starttime - ASF.recordingStartTimeInMills,
+                endtime: x.endtime - ASF.recordingStartTimeInMills,
+                t_f: x.t_f,
+            };
+        });
+        console.log(ASF.recording);
+        console.log(recordingZeroedFromStartTime);
+        ASF.loops.push({ track: recordingZeroedFromStartTime, meta: { padTo: -1 } });
+
+        makeLoopDisplays();
+
+        ASF.recording = null;
+        domToggle.innerHTML = '◉ start recording';
+    }
+}
+
+function makeLoopDisplays() {
+    const domWrapper = document.getElementById('loopWrapper');
+    let buf = '';
+
+    for (let i = 0; i < ASF.loops.length; i++) {
+        const loop = ASF.loops[i];
+        const trackAsMillis = loop.track;
+        const padTo = loop.meta.padTo;
+        if (trackAsMillis.length > 0) {
+            const trackAsFrames = translateIntoFramesWithPauses(trackAsMillis, padTo);
+            const finalThing = trackAsFrames[trackAsFrames.length - 1];
+            const finalFrame = finalThing.endframe + finalThing.pauseframes;
+            const finalBeat = ((finalFrame * ASF.bpm) / 3600).toFixed(2);
+
+            // const width = loop.meta.padTo == -1 ? finalFrame : loop.meta.padTo * ASF.fpc;
+            buf += `<div class='loopWrapper'><div class='loop' style='width:${finalFrame}px' id='track-${i}'>${trackAsFrames
+                .map((frameblock) => makeFrameBlock(frameblock))
+                .join('')}${makeBars(finalFrame)}</div>
+                <div>
+                    
+                    <a onclick='deleteLoop(${i});return false;' href='#'>delete</a>
+                </div>
+                </div>
+             ${finalFrame} frames ${finalBeat} beats
+                    ${showPadOption(i, loop.meta, finalBeat)}
+            <br><br>
+            `;
+        }
+    }
+    domWrapper.innerHTML = buf;
+}
+
+function showPadOption(index, meta, finalBeat) {
+    const hasPad = meta.padTo != -1;
+    if (hasPad) {
+        return `<label><input checked id='padTo_${index}' type='checkbox' onclick='setPadLoop(${index},-1);'>
+                    padded to ${meta.padTo} beats</a></label><a onclick='setupPadLoop(${index},${finalBeat});return false;' href='#'>change</a>
+            `;
+    }
+    return `<label><input id='padTo_${index}' type='checkbox' onclick='setupPadLoop(${index},${finalBeat})' >pad track to whole beats</label>`;
+}
+
+function setupPadLoop(index, finalBeat) {
+    const suggestion = nextMultipleOfFour(finalBeat);
+    const res = prompt('Pad to make how many beats?', suggestion);
+    if (res) setPadLoop(index, res);
+}
+
+function nextMultipleOfFour(finalBeat) {
+    let x = Math.ceil(finalBeat);
+    while (x % 4 != 0) x++;
+    return x;
+}
+
+function setPadLoop(index, beatcount) {
+    ASF.loops[index].meta.padTo = beatcount;
+    makeLoopDisplays();
+}
+
+function makeFrameBlock(fb) {
+    return `<div style='left:${fb.startframe}px; width:${fb.durationframes}px;top:${fb.f}px'></div>`;
+}
+
+function makeBars(finalFrame) {
+    const barCount = parseInt(finalFrame / (ASF.fpc * ASF.beatsPerMeasure)) + 1;
+    let buf = '';
+    for (let i = 1; i < barCount; i++) {
+        buf += `<div class='bar' style='left:${i * (ASF.fpc * ASF.beatsPerMeasure)}px'></div>`; //pixelsPerFrame = 1
+    }
+    return buf;
+}
+
+function deleteLoop(index) {
+    ASF.loops.splice(index, 1);
+    makeLoopDisplays();
+}
+
+function togglePlayBack() {
+    if (!ASF.nowPlaying) {
+        playBack();
+        ASF.nowPlaying = true;
+        setPlaybackButtonOff();
+    } else {
+        ASF.nowPlaying = false;
+        setPlaybackButtonOn();
+    }
+}
+
+function playBack() {
+    for (let i = 0; i < ASF.loops.length; i++) {
+        playBackLoop(ASF.loops[i].track, ASF.loops[i].meta.padTo);
+    }
+}
+
+function playBackLoop(track, padTo) {
+    if (track.length <= 0) return;
+    // const startTime = track[0].starttime;
+
+    const timeToCheckRestart = padTo == -1 ? track[track.length - 1].endtime : padTo * ASF.millisPerTap;
+
+    for (let i = 0; i < track.length; i++) {
+        const e = track[i];
+        const delayStart = e.starttime; //- startTime;
+        const delayStop = e.endtime; // - startTime;
         const t_f = e.t_f;
         const clip = getFileForTF(t_f.t, t_f.f);
 
-        console.log(delay);
-        if (e.event === 'down') {
-            setTimeout(() => {
-                clip.play();
-            }, delay);
-        }
-        if (e.event === 'up') {
-            setTimeout(() => {
-                clip.stop();
-            }, delay);
-        }
+        setTimeout(() => {
+            clip.play();
+        }, delayStart);
+        setTimeout(() => {
+            clip.stop();
+        }, delayStop);
     }
+    setTimeout(() => {
+        if (ASF.nowPlaying) {
+            console.log('pete repeat', track, padTo);
+            playBackLoop(track, padTo);
+        }
+    }, timeToCheckRestart);
 }
 
 function promptBPM() {
     const bpm = prompt('How many BPM?', ASF.bpm);
     if (bpm) {
+        ASF.bpm = bpm;
+        ASF.fpc = 3600 / bpm;
         window.bpm.innerHTML = bpm;
-        window.fpc.innerHTML = 3600 / bpm;
+        window.fpc.innerHTML = ASF.fpc;
         ASF.millisPerTap = (60 * 1000) / bpm;
-        ASF.bpm = 120;
     }
-    if (ASF.tapTimer) startBeat();
+}
+
+function generateBasicData(track, padTo) {
+    const framevents = translateIntoFramesWithPauses(track, padTo);
+    let buf = '';
+
+    if (framevents.length == 0) return '';
+
+    const initialTime = framevents[0].startframe;
+
+    if (initialTime > 0) {
+        buf += `   0, 0, 0, ${initialTime},\n`;
+    }
+
+    for (let i = 0; i < framevents.length; i++) {
+        const f = framevents[i];
+        const dur = f.durationframes;
+        const playline = `   8, ${f.t}, ${f.f}, ${dur},\n`;
+        //console.log(f, dur, playline);
+        buf += playline;
+        const pauseline = `   0, 0, 0, ${f.pauseframes},\n`;
+        buf += pauseline;
+    }
+    return buf;
+}
+
+function generateBasic() {
+    const basic =
+        ASF.loops.length == 1
+            ? doBasicTemplateSingle(generateBasicData(ASF.loops[0].track, ASF.loops[0].meta.padTo))
+            : doBasicTemplateDouble(
+                  generateBasicData(ASF.loops[0].track, ASF.loops[0].meta.padTo),
+                  generateBasicData(ASF.loops[1].track, ASF.loops[1].meta.padTo)
+              );
+    document.getElementById('basicTextarea').value = basic;
+}
+function translateIntoFramesWithPauses(recording, padToBeat) {
+    if (!recording || !recording.length) return [];
+    const frameTrack = [];
+    const startOfTrackInMillis = 0; //ASF.fpc * ASF.beatsPerMeasure;  //hack
+
+    for (let i = 0; i < recording.length; i++) {
+        const thing = recording[i];
+        const framevent = {};
+        framevent.startframe = millisToFrames(thing.starttime - startOfTrackInMillis);
+        framevent.endframe = millisToFrames(thing.endtime - startOfTrackInMillis);
+        framevent.durationframes = framevent.endframe - framevent.startframe;
+        framevent.t = thing.t_f.t;
+        framevent.f = thing.t_f.f;
+        frameTrack.push(framevent);
+    }
+    for (let i = 0; i < frameTrack.length - 1; i++) {
+        const framevent = frameTrack[i];
+        const next = frameTrack[i + 1];
+        framevent.pauseframes = next.startframe - framevent.endframe;
+    }
+    //WE SEEM TO BE GETTING SOME KIND ROUNDING ERROR IN PREVIOUS METHOD,
+    //SO HERE WE ARE JUST SEEING WHAT WE GOT SO FAR...
+    const firstFrame = frameTrack[0];
+    const finalFrame = frameTrack[frameTrack.length - 1];
+    finalFrame.pauseframes = 0;
+    //
+    //console.log(`time total is ${framevents.reduce(timesum, 0)}`);
+
+    //finalFrame;
+    //final frame, see if we are padding. Padding is a nunber of beats,
+    // convert that to # of frames, and then add a padding to the end of whatever endframe was
+    if (padToBeat != -1) {
+        finalFrame.pauseframes = padToBeat * ASF.fpc - frameTrack.reduce(timesumForFrames, firstFrame.startframe);
+    }
+
+    console.log('FINALLY GOT TIME ', frameTrack.reduce(timesumForFrames, firstFrame.startframe));
+
+    return frameTrack;
+}
+const timesumForFrames = (a, cv) => a + cv.durationframes + cv.pauseframes;
+
+function millisToFrames(millis) {
+    return parseInt((millis * 60) / 1000);
+    //return Math.round((millis * 60) / 1000);
+}
+function copyBasicToClipboard() {
+    let textarea = document.getElementById('basicTextarea');
+    textarea.select();
+    document.execCommand('copy');
+}
+
+function setPlaybackButtonOn() {
+    document.getElementById('playback').innerHTML = '▶ playback';
+}
+function setPlaybackButtonOff() {
+    document.getElementById('playback').innerHTML = '▣ end loops';
 }
 
 ready(loadStuff);

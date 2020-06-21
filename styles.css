@@ -7,6 +7,10 @@ a {
     color: black;
 }
 
+button {
+    height: 2.2em;
+}
+
 details summary {
     font-size: 1.5em;
 }
@@ -14,8 +18,23 @@ details {
     margin: 2em 0em;
 }
 
+textarea {
+    display: block;
+    width: 40em;
+    height: 10em;
+}
+
 .content {
     margin-left: 20px;
+}
+
+.button-as-link {
+    background: none !important;
+    border: none;
+    padding: 0 !important;
+    color: black;
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 .typewriter-row {
@@ -86,4 +105,31 @@ details {
 }
 .piano .key.sharp.keydown {
     background-color: #fcc;
+}
+
+.loopWrapper {
+    display: flex;
+}
+
+.loop {
+    border: 1px solid black;
+    height: 32px;
+    min-width: 32px;
+    position: relative;
+    display: inline-block;
+}
+.loop > div {
+    background-color: black;
+    position: absolute;
+    height: 1px;
+}
+.loop > div.bar {
+    height: 32px;
+    width: 1px;
+    background-color: #999;
+}
+
+#recordingStatus {
+    color: red;
+    min-height: 1.5em;
 }
