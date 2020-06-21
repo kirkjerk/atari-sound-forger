@@ -106,9 +106,16 @@ textarea {
 .piano .key.sharp.keydown {
     background-color: #fcc;
 }
+/* 
+.allLoopsWrapper {
+    border: 1px solid black;
+    padding: 4px;
+    display: inline-block;
+} */
 
 .loopWrapper {
     display: flex;
+    align-items: center;
 }
 
 .loop {

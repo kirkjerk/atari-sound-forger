@@ -6,7 +6,6 @@ see about not doing typing thing
     TODO:
     1. sustain/release
     2. see what happens when notes pressed in a row
-    3. singular stop button + fix interaction playback/record
     
     MAYBE:
         - upper case keys as option?
@@ -148,6 +147,10 @@ function stopAllSounds() {
     Object.keys(ASF.currentMap.key2tfm).forEach((key) => {
         stopSound(key);
     });
+    if (ASF.nowPlaying) {
+        togglePlayBack();
+    }
+    stopBeat();
 }
 function stopAllPlaybackTimeouts() {
     console.log('stopAllPlaybackIntervals', ASF.activePlaybackTimeouts);
@@ -369,6 +372,8 @@ function stopBeat() {
 
 function toggleRecording() {
     const domToggle = document.getElementById('toggleRecording');
+    const domPlaybackToggle = document.getElementById('playback');
+
     if (!ASF.recording) {
         ASF.recording = [];
         domToggle.innerHTML = '◾ stop recording';
@@ -380,6 +385,7 @@ function toggleRecording() {
         } else {
             ASF.beatsToGo = 0;
         }
+        domPlaybackToggle.disabled = true;
     } else {
         stopBeat();
         ASF.nowPlaying = false;
@@ -400,6 +406,7 @@ function toggleRecording() {
 
         ASF.recording = null;
         domToggle.innerHTML = '◉ start recording';
+        domPlaybackToggle.disabled = false;
     }
 }
 
@@ -439,7 +446,7 @@ function showPadOption(index, meta, finalBeat) {
     const hasPad = meta.padTo != -1;
     if (hasPad) {
         return `<label><input checked id='padTo_${index}' type='checkbox' onclick='setPadLoop(${index},-1);'>
-                    padded to ${meta.padTo} beats</a></label><a onclick='setupPadLoop(${index},${finalBeat});return false;' href='#'>change</a>
+                    padded to ${meta.padTo} beats</a></label> <a onclick='setupPadLoop(${index},${finalBeat});return false;' href='#'>change</a>
             `;
     }
     return `<label><input id='padTo_${index}' type='checkbox' onclick='setupPadLoop(${index},${finalBeat})' >pad track to whole beats</label>`;
@@ -481,14 +488,17 @@ function deleteLoop(index) {
 }
 
 function togglePlayBack() {
+    const domToggleRecording = document.getElementById('toggleRecording');
     if (!ASF.nowPlaying) {
         playBack();
         ASF.nowPlaying = true;
         setPlaybackButtonOff();
+        domToggleRecording.disabled = true;
     } else {
         ASF.nowPlaying = false;
         setPlaybackButtonOn();
         stopAllPlaybackTimeouts();
+        domToggleRecording.disabled = false;
     }
 }
 
@@ -627,7 +637,7 @@ function setPlaybackButtonOn() {
     document.getElementById('playback').innerHTML = '▶ playback';
 }
 function setPlaybackButtonOff() {
-    document.getElementById('playback').innerHTML = '▣ end loops';
+    document.getElementById('playback').innerHTML = '▣ end playback';
 }
 
 ready(loadStuff);
