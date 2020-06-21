@@ -61,6 +61,9 @@ function loadStuff() {
         ASF.maps = defaultMaps;
     }
 
+    stopKeyDownPropagation('basicTextarea');
+    stopKeyDownPropagation('mappingsets');
+
     const previousMapIndex = localStorage.getItem('atari-sound-forger-map-index');
     ASF.currentMapIndex = previousMapIndex === undefined ? 0 : previousMapIndex;
 
@@ -638,6 +641,17 @@ function setPlaybackButtonOn() {
 }
 function setPlaybackButtonOff() {
     document.getElementById('playback').innerHTML = '▣ end playback';
+}
+
+function stopKeyDownPropagation(domId) {
+    const elem = document.getElementById(domId).addEventListener(
+        'keydown',
+        function (event) {
+            console.log('stop it!');
+            event.stopPropagation();
+        },
+        false
+    );
 }
 
 ready(loadStuff);
