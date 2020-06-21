@@ -8,40 +8,80 @@
     <body>
         <script src="./Pizzicato.min.js"></script>
         <script src="defaultMaps.js"></script>
+        <script src="templateBas.js"></script>
         <script src="asf.js"></script>
 
         <div class="content">
-            <h1>Atari Sound Forger (v0.2 alpha)</h1>
+            <h1>Atari Sound Forger (v0.5 alpha)</h1>
+
+
+            <details>
+                <summary>About</summary>
+            <p>
+                This is meant as a fun real-time tool for exploring Atari 2600 Sounds.
+            </p>
+            <p>
+                Using "mapping sets", standard atari voices are mapped to the computer keyboard, 
+                allowing quick play as with a regular synth keyboard.
+            </p>
+            <p>
+                Some mapping sets draw from different Atari voices, and some will display a mapping 
+                to the a "regular" piano keyboard when available. (Tuning the Atari is a tricky thing :-) )
+            </p>
+            <p>
+                You can create your own mapping sets as well.
+            </p>
+            <p>
+                Future plans include recording timing information and generating batari Basic samples.
+            </p>
+        </details>
+            <pre id="log"></pre>
+
             <label
                 >Current Mapping Set:
                 <select id="mapSelect" onchange="setupSelectedMap()"></select
             ></label>
 
+            
+<div keyWrapper tabindex="0">
             <div class="piano" id="pianoWrapper"></div>
             <div id="keyboardWrapper"></div>
-
+</div>
             <button onclick="stopAllSounds()">stop all sounds</button>
 
+            <details open>
+                <summary>Recording</summary>
+                
+                <h3>Loops</h3>
+
+                <div style="display:flex">
+                    <button id="toggleRecording" onclick="toggleRecording()">◉ start recording</button>
+                    <div><label><input id="useClickTrack" type="checkbox" checked>Include Click Track </label><br> &nbsp;&nbsp;&nbsp;&nbsp;[<span id="bpm">120</span>bpm : <span id="fpc">30</span> frames per beat] <a href="#" onclick="promptBPM(); return false;">change</a></div>
+                </div>
+
+                 <div id="recordingStatus"></div>
 
 
-            <pre id="log"></pre>
+                
 
-                    <p>
-                        This is meant as a fun real-time tool for exploring Atari 2600 Sounds.
-                    </p>
-                    <p>
-                        Using "mapping sets", standard atari voices are mapped to the laptop keyboard, 
-                        allowing quick play as with a regular synth keyboard.
-                    </p>
-                    <p>
-                        Some mapping sets draw from different Atari voices, and some will display a mapping 
-                        to the a "regular" piano keyboard when available. (Tuning the Atari is a tricky thing :-) )
-                    </p>
-                    <p>
-                        You can create your own mapping sets as well.
-                    </p>
-                    <p>
-                        Future plans include recording timing information and generating batari Basic samples.
+                <div id="loopWrapper"></div>
+                
+                
+                <br>
+                
+                
+                <button id="playback" onclick="togglePlayBack()"></button>
+                <br><br>
+                
+                <h3>batari Basic code</h3>
+                <textarea id="basicTextarea"></textarea>
+                <button onclick="generateBasic()">generate batariBasic code</button><button onclick="copyBasicToClipboard()">copy code to clipboard</button>
+                
+            </details>    
+
+
+
+            
 
             <details>
                 <summary>Advanced Tools</summary>
@@ -65,9 +105,11 @@
                     so if you make something cool you may want to copy and paste it to someplace safe.
                 </p>
                 <h4>Current Mappings</h4>
-                <textarea id="mappingsets" style="width:40em;height:10em"></textarea>
+                <textarea id="mappingsets"></textarea>
             </br>
-                <button onclick="storeMappingSetsAndReload()">Store and Use Mapping Sets</button> (leave textarea blank to restore defaults)
+                <button onclick="storeMappingSetsAndReload()">Store and Use Mapping Sets</button> 
+                <button class="button-as-link" onclick="restoreDefaultMappings()">Restore Defaults</button>
+                
                 <p>(warning: / key leads to bad results on Firefox)</p>
             </details>
 
