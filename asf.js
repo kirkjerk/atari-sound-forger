@@ -4,6 +4,10 @@ Stop things for reals w/ loops...
 see about not doing typing thing
 
     TODO:
+    1. sustain/release
+    2. see what happens when notes pressed in a row
+    3. singular stop button + fix interaction playback/record
+    
     MAYBE:
         - upper case keys as option?
         -sounds with decay
@@ -42,6 +46,7 @@ ASF.key2pianoDomId = {}; //key code to id of typewriter keyboard key, to light u
 ASF.recording = null;
 ASF.recordingKeysNowDown = {};
 ASF.loops = [];
+ASF.activePlaybackTimeouts = [];
 
 function loadStuff() {
     document.addEventListener('keydown', handleKeyDown);
@@ -143,6 +148,14 @@ function stopAllSounds() {
     Object.keys(ASF.currentMap.key2tfm).forEach((key) => {
         stopSound(key);
     });
+}
+function stopAllPlaybackTimeouts() {
+    console.log('stopAllPlaybackIntervals', ASF.activePlaybackTimeouts);
+    for (let i = 0; i < ASF.activePlaybackTimeouts.length; i++) {
+        clearTimeout(ASF.activePlaybackTimeouts[i]);
+    }
+    ASF.activePlaybackTimeouts = [];
+    stopAllSounds();
 }
 
 function handleKeyDown(e) {
@@ -475,6 +488,7 @@ function togglePlayBack() {
     } else {
         ASF.nowPlaying = false;
         setPlaybackButtonOn();
+        stopAllPlaybackTimeouts();
     }
 }
 
@@ -497,9 +511,11 @@ function playBackLoop(track, padTo) {
         const t_f = e.t_f;
         const clip = getFileForTF(t_f.t, t_f.f);
 
-        setTimeout(() => {
-            clip.play();
-        }, delayStart);
+        ASF.activePlaybackTimeouts.push(
+            setTimeout(() => {
+                clip.play();
+            }, delayStart)
+        );
         setTimeout(() => {
             clip.stop();
         }, delayStop);
@@ -560,13 +576,12 @@ function generateBasic() {
 function translateIntoFramesWithPauses(recording, padToBeat) {
     if (!recording || !recording.length) return [];
     const frameTrack = [];
-    const startOfTrackInMillis = 0; //ASF.fpc * ASF.beatsPerMeasure;  //hack
 
     for (let i = 0; i < recording.length; i++) {
         const thing = recording[i];
         const framevent = {};
-        framevent.startframe = millisToFrames(thing.starttime - startOfTrackInMillis);
-        framevent.endframe = millisToFrames(thing.endtime - startOfTrackInMillis);
+        framevent.startframe = millisToFrames(thing.starttime);
+        framevent.endframe = millisToFrames(thing.endtime);
         framevent.durationframes = framevent.endframe - framevent.startframe;
         framevent.t = thing.t_f.t;
         framevent.f = thing.t_f.f;
