@@ -12,13 +12,14 @@
         <script src="asf.js"></script>
 
         <div class="content">
-            <h1>Atari Sound Forger (v0.8 beta)</h1>
+            <h1>Atari Sound Forger (v0.82 beta)</h1>
 
 
-            <details>
+            <details open>
                 <summary>About</summary>
             <p>
-                This is meant as a fun real-time tool for exploring Atari 2600 Sounds.
+                This is meant as a fun real-time tool for exploring Atari 2600 Sounds and recording 
+                loops you can then play back on an Atari
             </p>
             <p>
                 Using "mapping sets", standard atari voices are mapped to the computer keyboard, 
@@ -49,7 +50,7 @@
 </div>
             <button onclick="stopAllSounds()">stop all sounds</button>
 
-            <details open>
+            <details>
                 <summary>Recording, Playback, and Atari Code</summary>
                 
                 <h3>Loops</h3>
@@ -99,6 +100,10 @@
                         key2tfm - an map of keyboard keys to Atari tone, frequency, and piano note
                                   (note, octave, then maybe sharp, i.e. e2 or f3# )
                                   (piano note for display purposes only...)
+                                  t: tone (voice used)
+                                  f: frequency
+                                  p: piano note
+                                  v: volume (optional, defaults to 8, ignored by js but used in batari Basic listing)
 
                     </pre>
                 </p>

@@ -173,7 +173,7 @@ function startSound(keypressed) {
         clip.play();
 
         const t_f = ASF.currentMap.key2tfm[keypressed];
-
+        console.log(t_f);
         ASF.recordingKeysNowDown[keypressed] = { t_f, starttime: Date.now() };
 
         const kbdDom = document.getElementById(ASF.key2kbdDomId[keypressed]);
@@ -228,6 +228,7 @@ function ready(fn) {
 function setupSelectedMap() {
     ASF.key2kbdDomId = {};
     const selectElem = window.mapSelect;
+
     ASF.currentMap = ASF.maps[selectElem.options[selectElem.selectedIndex].value];
     //ASF.log(`selected tone ${JSON.stringify(ASF.currentMap)}`);
     loadAllFilesForMap(ASF.currentMap);
@@ -351,6 +352,8 @@ function renderUSTypingKeyboard(currentMap) {
 function startBeat() {
     console.log(ASF.counts);
 
+    const useClickTrack = document.getElementById('useClickTrack').checked;
+
     const domStatus = document.getElementById('recordingStatus');
     if (ASF.tapTimer) clearInterval(ASF.tapTimer);
     ASF.tapTimer = setInterval(() => {
@@ -361,8 +364,10 @@ function startBeat() {
         if (ASF.beatsToGo >= 1 && ASF.beatsToGo <= 4) {
             ASF.counts[`${ASF.beatsToGo}`].play();
         } else {
-            ASF.tap.stop();
-            ASF.tap.play();
+            if (useClickTrack) {
+                ASF.tap.stop();
+                ASF.tap.play();
+            }
         }
         domStatus.innerHTML = ASF.beatsToGo <= 0 ? 'RECORDING' : ASF.beatsToGo;
         ASF.beatsToGo--;
@@ -381,13 +386,9 @@ function toggleRecording() {
         ASF.recording = [];
         domToggle.innerHTML = '◾ stop recording';
 
-        const useClickTrack = document.getElementById('useClickTrack').checked;
-        if (useClickTrack) {
-            ASF.beatsToGo = 4;
-            startBeat();
-        } else {
-            ASF.beatsToGo = 0;
-        }
+        ASF.beatsToGo = 4;
+        startBeat();
+
         domPlaybackToggle.disabled = true;
     } else {
         stopBeat();
@@ -567,10 +568,11 @@ function generateBasicData(track, padTo) {
     for (let i = 0; i < framevents.length; i++) {
         const f = framevents[i];
         const dur = f.durationframes;
-        const playline = `   8, ${f.t}, ${f.f}, ${dur},\n`;
+
+        const playline = dur > 0 ? `   ${f.v}, ${f.t}, ${f.f}, ${dur},\n` : '';
         //console.log(f, dur, playline);
         buf += playline;
-        const pauseline = `   0, 0, 0, ${f.pauseframes},\n`;
+        const pauseline = f.pauseframes > 0 ? `   0, 0, 0, ${f.pauseframes},\n` : '';
         buf += pauseline;
     }
     return buf;
@@ -598,6 +600,7 @@ function translateIntoFramesWithPauses(recording, padToBeat) {
         framevent.durationframes = framevent.endframe - framevent.startframe;
         framevent.t = thing.t_f.t;
         framevent.f = thing.t_f.f;
+        framevent.v = thing.t_f.v ? thing.t_f.v : 8;
         frameTrack.push(framevent);
     }
     for (let i = 0; i < frameTrack.length - 1; i++) {
