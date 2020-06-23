@@ -6,7 +6,12 @@ see about not doing typing thing
     TODO:
     1. sustain/release
     2. see what happens when notes pressed in a row
+
+- It doesn't play well with FireFox when "Find as you type" (aka "Search for text when you start typing") is enabled.
+
+- It's a bit difficult, out of the box, for keyboards like "azerty" or "qwertz".
     
+
     MAYBE:
         - upper case keys as option?
         -sounds with decay
@@ -307,16 +312,24 @@ function renderPianoKey(note, octave, note2type, note2hunk) {
     ASF.key2pianoDomId[note2type[notename]] = kbdDomId;
 
     return !sharp
-        ? `<div class='wrapper'><div id='${kbdDomId}' class='key ${disabled}'>${caption}</div></div>`
-        : `<div class='wrapper'><div id='${kbdDomId}' class='key sharp ${disabled}'>${caption}</div></div>`;
+        ? `<div class='wrapper' onmousedown="startAndStopSound('${note2type[notename]}')"><div id='${kbdDomId}' class='key ${disabled}'>${caption}</div></div>`
+        : `<div class='wrapper' onmousedown="startAndStopSound('${note2type[notename]}')"><div id='${kbdDomId}' class='key sharp ${disabled}'>${caption}</div></div>`;
 }
 
 function renderUSTypingKeyboard(currentMap) {
+    // const keySelection localStorage.getItem("atari-sound-forger-maps");
+
     const keys = `\`1234567890-=
 ~~~qwertyuiop[]\\
 ~~~~asdfghjkl;'
 ~~~~~zxcvbnm,.
 ~~~~~~~~ `;
+
+    //   const Qwertzkeys = `\`1234567890
+    // ~~~qwertzuiop[]\\
+    // ~~~~asdfghjkl;'
+    // ~~~~~yxcvbnm,.
+    // ~~~~~~~~ `;
 
     let keyCounter = 0;
 
@@ -335,18 +348,25 @@ function renderUSTypingKeyboard(currentMap) {
             return `<div class='spacer' id='${kbdDomId}'> </div>`;
         }
         if (c === ' ') {
-            return `<div class='space' id='${kbdDomId}'>${c}${soundDisplay}</div>`;
+            return `<div class='space' onclick="stopAllSounds()" id='${kbdDomId}'>stop all sounds</div>`;
         }
 
         ASF.key2kbdDomId[c] = kbdDomId;
 
-        return `<div  id='${kbdDomId}'><b>${c}</b>${soundDisplay}</div>`;
+        return `<div onmousedown="startAndStopSound('${c}')" id='${kbdDomId}'><b>${c}</b>${soundDisplay}</div>`;
     }
 
     const rowsOfKeys = keys.split('\n');
     const rows = rowsOfKeys.map(makeRow);
 
     return rows.map((rowcontent) => `<div class='typewriter-row'>${rowcontent}</div>`).join('');
+}
+
+function startAndStopSound(c) {
+    startSound(c);
+    setTimeout(() => {
+        stopSound(c);
+    }, 150);
 }
 
 function startBeat() {
@@ -404,7 +424,10 @@ function toggleRecording() {
         });
         console.log(ASF.recording);
         console.log(recordingZeroedFromStartTime);
-        ASF.loops.push({ track: recordingZeroedFromStartTime, meta: { padTo: -1 } });
+        ASF.loops.push({
+            track: recordingZeroedFromStartTime,
+            meta: { padTo: -1 },
+        });
 
         makeLoopDisplays();
 
